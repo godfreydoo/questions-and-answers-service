@@ -1,0 +1,3 @@
+[submodule "catwalk-client"]
+	path = catwalk-client
+	url = https://github.com/SDC-Team-Frodo/project-catwalk.git
