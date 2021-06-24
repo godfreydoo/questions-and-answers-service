@@ -1,8 +1,8 @@
 CREATE SCHEMA IF NOT EXISTS qa;
 
-DROP TABLE IF EXISTS qa.questions;
-DROP TABLE IF EXISTS qa.photos;
-DROP TABLE IF EXISTS qa.answers;
+-- DROP TABLE IF EXISTS qa.questions;
+-- DROP TABLE IF EXISTS qa.photos;
+-- DROP TABLE IF EXISTS qa.answers;
 
 
 CREATE TABLE IF NOT EXISTS qa.questions (
