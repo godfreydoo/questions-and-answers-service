@@ -4,8 +4,8 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start-server": "nodemon server.js",
-    "load-data": "node pg-pipeline.js",
+    "start": "nodemon server.js",
+    "load-data": "node db/pg-pipeline.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

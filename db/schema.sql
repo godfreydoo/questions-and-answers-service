@@ -1,6 +1,11 @@
 CREATE SCHEMA IF NOT EXISTS qa;
 
-CREATE TABLE IF NOT EXISTS qa.question (
+DROP TABLE IF EXISTS qa.questions;
+DROP TABLE IF EXISTS qa.photos;
+DROP TABLE IF EXISTS qa.answers;
+
+
+CREATE TABLE IF NOT EXISTS qa.questions (
   id serial primary key,
   product_id int,
   body varchar(1000),
@@ -11,7 +16,7 @@ CREATE TABLE IF NOT EXISTS qa.question (
   helpful int
 );
 
-CREATE TABLE IF NOT EXISTS qa.answer (
+CREATE TABLE IF NOT EXISTS qa.answers (
   id serial primary key,
   question_id int,
   body varchar(1000),
@@ -22,7 +27,7 @@ CREATE TABLE IF NOT EXISTS qa.answer (
   helpful int
 );
 
-CREATE TABLE IF NOT EXISTS qa.photo (
+CREATE TABLE IF NOT EXISTS qa.photos (
   id serial primary key,
   answer_id int,
   url varchar(256)
