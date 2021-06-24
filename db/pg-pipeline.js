@@ -55,19 +55,19 @@ function uploadAnswers() {
     console.time('answers');
     console.log('Uploading answers data...')
     fs.createReadStream('db/answers.csv')
-    .pipe(etl.csv())
-    .pipe(etl.postgres.script(pool, 'qa', 'answers', {pushResult: true}))
-    .pipe(etl.postgres.execute(pool, 10))
-    .promise()
-    .then(() => {
-      console.timeEnd('answers');
-      console.log("Call to upload answers.csv finished");
-      resolve();
-    })
-    .catch(error => {
-      console.error(error);
-      reject();
-    });
+      .pipe(etl.csv())
+      .pipe(etl.postgres.script(pool, 'qa', 'answers', {pushResult: true}))
+      .pipe(etl.postgres.execute(pool, 10))
+      .promise()
+      .then(() => {
+        console.timeEnd('answers');
+        console.log("Call to upload answers.csv finished");
+        resolve();
+      })
+      .catch(error => {
+        console.error(error);
+        reject();
+      });
   })
 }
 
@@ -77,18 +77,18 @@ function uploadQuestions() {
     console.time('questions');
     console.log('Uploading questions data...')
     fs.createReadStream('db/questions.csv')
-    .pipe(etl.csv())
-    .pipe(etl.postgres.script(pool, 'qa', 'questions', {pushResult: true}))
-    .pipe(etl.postgres.execute(pool, 10))
-    .promise()
-    .then(() => {
-      console.timeEnd('questions');
-      console.log("Call to upload questions.csv finished");
-      resolve();
-    })
-    .catch(error => {
-      console.error(error);
-      reject();
-    });
+      .pipe(etl.csv())
+      .pipe(etl.postgres.script(pool, 'qa', 'questions', {pushResult: true}))
+      .pipe(etl.postgres.execute(pool, 10))
+      .promise()
+      .then(() => {
+        console.timeEnd('questions');
+        console.log("Call to upload questions.csv finished");
+        resolve();
+      })
+      .catch(error => {
+        console.error(error);
+        reject();
+      });
   })
 }
