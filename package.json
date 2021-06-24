@@ -1,0 +1,29 @@
+{
+  "name": "questions-and-answers-service",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start-server": "nodemon server.js",
+    "load-data": "node pg-pipeline.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SDC-Team-Frodo/questions-and-answers-service.git"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SDC-Team-Frodo/questions-and-answers-service/issues"
+  },
+  "homepage": "https://github.com/SDC-Team-Frodo/questions-and-answers-service#readme",
+  "dependencies": {
+    "dotenv": "^10.0.0",
+    "etl": "^0.6.12",
+    "express": "^4.17.1",
+    "pg": "^8.6.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  }
+}
