@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS qa.questions (
   asker_name varchar(60),
   asker_email varchar(60),
   reported boolean default false,
-  helpful int
+  helpful int default 0,
+  unique(id)
 );
 
 CREATE TABLE IF NOT EXISTS qa.answers (
@@ -24,7 +25,8 @@ CREATE TABLE IF NOT EXISTS qa.answers (
   answerer_name varchar(60),
   answerer_email varchar(60),
   reported boolean default false,
-  helpful int
+  helpful int default 0,
+  unique(id)
 );
 
 CREATE TABLE IF NOT EXISTS qa.photos (
@@ -33,3 +35,6 @@ CREATE TABLE IF NOT EXISTS qa.photos (
   url varchar(256)
 );
 
+-- ALTER TABLE qa.answers ALTER helpful SET DEFAULT 0;
+-- ALTER TABLE qa.questions ALTER helpful SET DEFAULT 0;
+-- ALTER TABLE qa.answers ADD CONSTRAINT unique_id UNIQUE(id);
