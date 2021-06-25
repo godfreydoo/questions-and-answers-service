@@ -55,18 +55,31 @@ app.get('/questions/:id/answers', async (req, res) => {
   }
 });
 
-// curl --header "Content-Type: application/json" --request POST --data '{"question_id":532,"body":"Does this work testing testing","answerer_name":"godfrey","answerer_email":"g@g.com"}' http://localhost:3000/qa/questions/532/answers
+// curl --header "Content-Type: application/json" --request POST --data '{"question_id":532,"body":"Does this work testing testing","answerer_name":"godfrey","answerer_email":"g@g.com","photos":["oogie boogie"]}' http://localhost:3000/qa/questions/532/answers
 app.post('/questions/:id/answers', async (req, res) => {
-  const getLatestId = 'select id from qa.answers order by id desc limit 1;'
+  const getLatestAnswerId = 'select id from qa.answers order by id desc limit 1;'
+  const getLatestPhotoId = 'select id from qa.answers order by id desc limit 1;'
   try {
     console.time('post answer');
-    let data = await pool.query(getLatestId)
-    const config = {
+    let answerId = await pool.query(getLatestAnswerId);
+    const answerConfig = {
       name: 'post-answer',
-      text: 'insert into qa.answers (id, question_id, body, answerer_name, answerer_email) values ($1, $2, $3, $4, $5);',
-      values: [data.rows[0].id + 1, req.body.question_id, req.body.body, req.body.answerer_name, req.body.answerer_email],
+      text: 'insert into qa.answers (id, question_id, body, answerer_name, answerer_email) values ($1, $2, $3, $4, $5) returning id;',
+      values: [answerId.rows[0].id + 1, req.body.question_id, req.body.body, req.body.answerer_name, req.body.answerer_email],
     }
-    let response = await pool.query(config);
+    var response = await pool.query(answerConfig);
+
+    let latestAnswerId = response.rows[0].id
+    let photoId = await pool.query(getLatestPhotoId);
+    await req.body.photos.forEach(async (value, index) => {
+      let photoConfig = {
+        name: 'post-photo',
+        text: 'insert into qa.photos (id, answer_id, url) values ($1, $2, $3);',
+        values: [photoId.rows[0].id + (index + 1), latestAnswerId, value],
+      }
+      let response = await pool.query(photoConfig);
+    })
+
     console.log(response);
     console.timeEnd('post answer')
     res.end();
