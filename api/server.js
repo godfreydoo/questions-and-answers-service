@@ -4,10 +4,6 @@ const PORT = 3001;
 const { Pool } = require('pg');
 require('dotenv').config({path: '../.env'});
 
-
-// Database and queries
-const { getQuestions, getQuestionIdAnswers, postQuestion, putAnswerHelpful, putAnswerReport, putQuestionHelpful, putQuestionReport } = require('../db/queries');
-
 const pool = new Pool({
   user: process.env.DB_USER,
   host: process.env.DB_HOST,
@@ -24,7 +20,7 @@ app.use(express.json());
 // curl http://localhost:3000/qa/questions/532
 app.get('/questions/:id', async (req, res) => {
   const config = {
-    name: 'fetch-questions',
+    name: 'get questions',
     text: 'select * from qa.questions where product_id = $1 group by questions.id order by sum(helpful) desc;',
     values: [req.query.id],
   }
@@ -43,7 +39,7 @@ app.get('/questions/:id', async (req, res) => {
 // curl http://localhost:3000/qa/questions/532/answers
 app.get('/questions/:id/answers', async (req, res) => {
   const config = {
-    name: 'fetch-questionId-answers',
+    name: 'get answers',
     text: 'select * from qa.answers where question_id = $1 group by answers.id order by sum(helpful) desc;',
     values: [req.query.id],
   }
@@ -71,7 +67,7 @@ app.post('/questions/:id/answers', async (req, res) => {
       values: [data.rows[0].id + 1, req.body.question_id, req.body.body, req.body.answerer_name, req.body.answerer_email],
     }
     let response = await pool.query(config);
-    console.table(response);
+    console.log(response);
     console.timeEnd('post answer')
     res.end();
   } catch (err) {
@@ -92,7 +88,7 @@ app.post('/questions', async (req, res) => {
       values: [data.rows[0].id + 1, req.body.product_id, req.body.body, req.body.answerer_name, req.body.answerer_email],
     }
     let response = await pool.query(config);
-    console.table(response);
+    console.log(response);
     console.timeEnd('post question')
     res.end();
   } catch (err) {
@@ -102,23 +98,91 @@ app.post('/questions', async (req, res) => {
 });
 
 // curl -X PUT http://localhost:3000/qa/questions/523/helpful
-app.put('/questions/:id/helpful', (req, res) => {
-  res.send('Hello from put /questions helpful')
+app.put('/questions/:id/helpful', async (req, res) => {
+  const config = {
+    name: 'put-question-helpful',
+    text: 'update qa.questions set helpful = helpful + 1 where id = $1;',
+    values: [req.query.id],
+  }
+  try {
+    console.time('put-question-helpful');
+    let data = await pool.query(config)
+    console.log(data);
+    console.timeEnd('put-question-helpful')
+    res.end();
+  } catch (err) {
+    console.error(err);
+    res.end();
+  }
 });
 
-// curl -X PUT http://localhost:3000/qa/answers/523/helpful
-app.put('/answers/:id/helpful', (req, res) => {
-  res.send('Hello from put /answers helpful')
+// curl -X PUT http://localhost:3000/qa/answers/18/helpful
+app.put('/answers/:id/helpful', async (req, res) => {
+  const config = {
+    name: 'put-answer-helpful',
+    text: 'update qa.answers set helpful = helpful + 1 where id = $1;',
+    values: [req.query.id],
+  }
+  try {
+    console.time('put-answer-helpful');
+    let data = await pool.query(config)
+    console.log(data);
+    console.timeEnd('put-answer-helpful')
+    res.end();
+  } catch (err) {
+    console.error(err);
+    res.end();
+  }
 });
 
 // curl -X PUT http://localhost:3000/qa/questions/523/report
-app.put('/questions/:id/report', (req, res) => {
-  res.send('Hello from put /questions report')
+app.put('/questions/:id/report', async (req, res) => {
+  const config = {
+    name: 'put-question-report',
+    text: 'update qa.questions set reported = true where id = $1;',
+    values: [req.query.id],
+  }
+  const check = {
+    name: 'confirm-put-question-report',
+    text: 'select reported from qa.questions where id = $1;',
+    values: [req.query.id],
+  }
+  try {
+    console.time('put-question-report');
+    let response = await pool.query(config);
+    let data = await pool.query(check);
+    console.log(data.rows[0].reported === true);
+    console.timeEnd('put-question-report')
+    res.end();
+  } catch (err) {
+    console.error(err);
+    res.end();
+  }
 });
 
-// curl -X PUT http://localhost:3000/qa/answers/523/report
-app.put('/answers/:id/report', (req, res) => {
-  res.send('Hello from put /answers report')
+// curl -X PUT http://localhost:3000/qa/answers/18/report
+app.put('/answers/:id/report', async (req, res) => {
+  const config = {
+    name: 'put-answer-report',
+    text: 'update qa.answers set reported = true where id = $1;',
+    values: [req.query.id],
+  }
+  const check = {
+    name: 'confirm-put-answer-report',
+    text: 'select reported from qa.answers where id = $1;',
+    values: [req.query.id],
+  }
+  try {
+    console.time('put-answer-report');
+    let response = await pool.query(config);
+    let data = await pool.query(check);
+    console.log(data.rows[0].reported === true);
+    console.timeEnd('put-answer-report')
+    res.end();
+  } catch (err) {
+    console.error(err);
+    res.end();
+  }
 });
 
 
