@@ -1,3 +1,4 @@
+require('newrelic');
 const express = require('express');
 const app = express();
 const PORT = 3001;
@@ -18,8 +19,6 @@ const pool = new Pool({
 app.use(express.json());
 
 /*
--- look into join instead of select sub-query
-
 EXPLAIN ANALYZE SELECT row_to_json(questions) AS questions
            FROM (SELECT json_agg(results) AS results
                 FROM (SELECT id AS question_id, body AS question_body, date_written AS question_date, asker_name, helpful AS question_helpfulness, reported, (SELECT row_to_json(questions) AS questions
@@ -36,10 +35,12 @@ EXPLAIN ANALYZE SELECT row_to_json(questions) AS questions
                       ORDER BY helpful)
                 AS results)
            AS questions;
+
+-- look into join instead of select sub-query
+-- look into not using join and doing any data manipulation on server-side
 */
 
-
-// curl http://localhost:3000/qa/questions/532
+// curl -s http://localhost:3000/qa/questions/532 > /dev/null
 app.get('/questions/:id', async (req, res) => {
   const answers = '(SELECT row_to_json(questions) AS questions\
                     FROM (SELECT array_agg(results) AS results\
@@ -64,23 +65,23 @@ app.get('/questions/:id', async (req, res) => {
     values: [req.query.id],
   }
   try {
-    console.time('get questions');
+    // console.time('get questions');
     let questionData = await pool.query(questionConfig);
     let result = {
       product_id: req.query.id,
       results: questionData.rows[0].questions.results
     }
-    console.log(result.results);
+    res.status(200).json(result);
+    // console.log(result.results);
     // console.log(result.results[0].answers);
-    console.timeEnd('get questions')
-    res.end();
+    // console.timeEnd('get questions')
   } catch (err) {
     console.error(e.stack);
-    res.end();
+    res.status(404).end();
   }
 });
 
-// curl http://localhost:3000/qa/questions/222/answers
+// curl -s http://localhost:3000/qa/questions/222/answers > /dev/null
 app.get('/questions/:id/answers', async (req, res) => {
   const answersConfig = {
     name: 'get answers',
@@ -95,19 +96,19 @@ app.get('/questions/:id/answers', async (req, res) => {
     values: [req.query.id],
   }
   try {
-    console.time('get answers');
+    // console.time('get answers');
     let data = await pool.query(answersConfig);
 
     let results = {
       question: Number(req.query.id),
       results: data.rows[0].questions.results
     }
-    console.log(results);
-    console.timeEnd('get answers')
-    res.end();
+    // console.log(results);
+    // console.timeEnd('get answers')
+    res.status(200).json(data);
   } catch (err) {
     console.error(e.stack);
-    res.end();
+    res.status(404).end()
   }
 });
 
@@ -116,7 +117,7 @@ app.post('/questions/:id/answers', async (req, res) => {
   const getLatestAnswerId = 'select id from qa.answers order by id desc limit 1;'
   const getLatestPhotoId = 'select id from qa.answers order by id desc limit 1;'
   try {
-    console.time('post answer');
+    // console.time('post answer');
     let answerId = await pool.query(getLatestAnswerId);
     const answerConfig = {
       name: 'post-answer',
@@ -135,13 +136,12 @@ app.post('/questions/:id/answers', async (req, res) => {
       }
       let response = await pool.query(photoConfig);
     })
-
-    console.log(response);
-    console.timeEnd('post answer')
-    res.end();
+    // console.log(response);
+    // console.timeEnd('post answer')
+    res.status(201).end()
   } catch (err) {
     console.error(err);
-    res.end();
+    res.status(404).end()
   }
 });
 
@@ -149,7 +149,7 @@ app.post('/questions/:id/answers', async (req, res) => {
 app.post('/questions', async (req, res) => {
   const getLatestId = 'select id from qa.questions order by id desc limit 1;'
   try {
-    console.time('post question');
+    // console.time('post question');
     let data = await pool.query(getLatestId)
     const config = {
       name: 'post-question',
@@ -157,12 +157,12 @@ app.post('/questions', async (req, res) => {
       values: [data.rows[0].id + 1, req.body.product_id, req.body.body, req.body.answerer_name, req.body.answerer_email],
     }
     let response = await pool.query(config);
-    console.log(response);
-    console.timeEnd('post question')
-    res.end();
+    // console.log(response);
+    // console.timeEnd('post question')
+    res.status(201).end()
   } catch (err) {
     console.error(err);
-    res.end();
+    res.status(404).end()
   }
 });
 
@@ -174,14 +174,14 @@ app.put('/questions/:id/helpful', async (req, res) => {
     values: [req.query.id],
   }
   try {
-    console.time('put-question-helpful');
+    // console.time('put-question-helpful');
     let data = await pool.query(config)
-    console.log(data);
-    console.timeEnd('put-question-helpful')
-    res.end();
+    // console.log(data);
+    // console.timeEnd('put-question-helpful')
+    res.status(204).end()
   } catch (err) {
     console.error(err);
-    res.end();
+    res.status(404).end()
   }
 });
 
@@ -193,14 +193,14 @@ app.put('/answers/:id/helpful', async (req, res) => {
     values: [req.query.id],
   }
   try {
-    console.time('put-answer-helpful');
+    // console.time('put-answer-helpful');
     let data = await pool.query(config)
-    console.log(data);
-    console.timeEnd('put-answer-helpful')
-    res.end();
+    // console.log(data);
+    // console.timeEnd('put-answer-helpful')
+    res.status(204).end()
   } catch (err) {
     console.error(err);
-    res.end();
+    res.status(404).end()
   }
 });
 
@@ -217,15 +217,15 @@ app.put('/questions/:id/report', async (req, res) => {
     values: [req.query.id],
   }
   try {
-    console.time('put-question-report');
+    // console.time('put-question-report');
     let response = await pool.query(config);
     let data = await pool.query(check);
-    console.log(data.rows[0].reported === true);
-    console.timeEnd('put-question-report')
-    res.end();
+    // console.log(data.rows[0].reported === true);
+    // console.timeEnd('put-question-report')
+    res.status(204).end()
   } catch (err) {
     console.error(err);
-    res.end();
+    res.status(404).end()
   }
 });
 
@@ -242,15 +242,15 @@ app.put('/answers/:id/report', async (req, res) => {
     values: [req.query.id],
   }
   try {
-    console.time('put-answer-report');
+    // console.time('put-answer-report');
     let response = await pool.query(config);
     let data = await pool.query(check);
-    console.log(data.rows[0].reported === true);
-    console.timeEnd('put-answer-report')
-    res.end();
+    // console.log(data.rows[0].reported === true);
+    // console.timeEnd('put-answer-report');
+    res.status(204).end()
   } catch (err) {
     console.error(err);
-    res.end();
+    res.status(404).end()
   }
 });
 

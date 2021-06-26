@@ -5,3 +5,5 @@ answers.csv
 questions.csv
 .DS_Store
 helpful.sql
+newrelic.js
+newrelic_agent.log

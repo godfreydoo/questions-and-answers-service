@@ -6,6 +6,7 @@
   "scripts": {
     "start": "nodemon gateway.js",
     "load-data": "node db/pg-pipeline.js",
+    "load-test": "k6 run k6script.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -22,7 +23,7 @@
     "dotenv": "^10.0.0",
     "etl": "^0.6.12",
     "express": "^4.17.1",
-    "jest": "^27.0.5",
+    "newrelic": "^7.5.1",
     "pg": "^8.6.0"
   },
   "devDependencies": {
