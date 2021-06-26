@@ -1,8 +1,8 @@
 CREATE SCHEMA IF NOT EXISTS qa;
 
--- DROP TABLE IF EXISTS qa.questions;
--- DROP TABLE IF EXISTS qa.photos;
--- DROP TABLE IF EXISTS qa.answers;
+DROP TABLE IF EXISTS qa.questions;
+DROP TABLE IF EXISTS qa.photos;
+DROP TABLE IF EXISTS qa.answers;
 
 
 CREATE TABLE IF NOT EXISTS qa.questions (
@@ -38,3 +38,13 @@ CREATE TABLE IF NOT EXISTS qa.photos (
 -- ALTER TABLE qa.answers ALTER helpful SET DEFAULT 0;
 -- ALTER TABLE qa.questions ALTER helpful SET DEFAULT 0;
 -- ALTER TABLE qa.answers ADD CONSTRAINT unique_id UNIQUE(id);
+
+CREATE UNIQUE INDEX question_id_qidx ON qa.questions (id);
+CREATE INDEX helpful_qidx ON qa.questions (helpful);
+CREATE INDEX product_id_qidx ON qa.questions (product_id);
+
+CREATE UNIQUE INDEX answer_id_aidx ON qa.answers (id);
+CREATE INDEX question_id_aidx ON qa.answers (question_id);
+CREATE INDEX helpful_aidx ON qa.answers (helpful);
+
+CREATE INDEX answer_id_pidx ON qa.photos (answer_id);

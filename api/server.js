@@ -19,13 +19,26 @@ app.use(express.json());
 
 // curl http://localhost:3000/qa/questions/532
 app.get('/questions/:id', async (req, res) => {
+  const answers = '(SELECT row_to_json(questions) AS questions\
+                    FROM (SELECT array_agg(results) AS results\
+                          FROM (SELECT answers.id AS answer_id, answers.body, answers.date_written AS date, answers.answerer_name, answers.helpful AS helpfulness, (SELECT array_agg(url) AS url FROM qa.photos WHERE answer_id = answers.id) AS photos\
+                                FROM qa.answers answers\
+                                WHERE question_id = $1 GROUP BY answers.id\
+                                ORDER BY SUM(answers.helpful) DESC)\
+                          AS results)\
+                    AS questions)';
+
   const questionConfig = {
     name: 'get questions',
-    text: 'SELECT row_to_json(questions) AS questions\
+    text: `SELECT row_to_json(questions) AS questions\
            FROM (SELECT json_agg(results) AS results\
-                FROM (SELECT id AS question_id, body AS question_body, date_written AS question_date, asker_name, helpful AS question_helpfulness, reported FROM qa.questions WHERE product_id = $1 GROUP BY questions.id ORDER BY sum(helpful) DESC)\
+                FROM (SELECT id AS question_id, body AS question_body, date_written AS question_date, asker_name, helpful AS question_helpfulness, reported, ${answers} AS answers\
+                      FROM qa.questions\
+                      WHERE product_id = $1\
+                      GROUP BY questions.id\
+                      ORDER BY sum(helpful) DESC)\
                 AS results)\
-           AS questions;',
+           AS questions;`,
     values: [req.query.id],
   }
   try {
@@ -36,6 +49,7 @@ app.get('/questions/:id', async (req, res) => {
       results: questionData.rows[0].questions.results
     }
     console.log(result);
+    // console.log(result.results[0].answers);
     console.timeEnd('get questions')
     res.end();
   } catch (err) {
@@ -44,28 +58,16 @@ app.get('/questions/:id', async (req, res) => {
   }
 });
 
-/*
-
-
-SELECT row_to_json(questions) AS questions
-FROM (
-    SELECT json_agg(results) as results
-    FROM (SELECT id AS answer_id, body, date_written AS date, answerer_name, helpful AS helpfulness FROM qa.answers WHERE question_id = 532 GROUP BY answers.id ORDER BY SUM(helpful) DESC)
-    AS results
-  )
-AS questions;
-
-*/
-
-
-
-// curl http://localhost:3000/qa/questions/532/answers
+// curl http://localhost:3000/qa/questions/222/answers
 app.get('/questions/:id/answers', async (req, res) => {
   const answersConfig = {
     name: 'get answers',
     text: 'SELECT row_to_json(questions) AS questions\
-           FROM (SELECT json_agg(results) as results\
-                 FROM (SELECT id AS answer_id, body, date_written AS date, answerer_name, helpful AS helpfulness FROM qa.answers WHERE question_id = $1 GROUP BY answers.id ORDER BY SUM(helpful) DESC)\
+           FROM (SELECT json_agg(results) AS results\
+                 FROM (SELECT answers.id AS answer_id, answers.body, answers.date_written AS date, answers.answerer_name, answers.helpful AS helpfulness, (SELECT array_agg(url) AS url FROM qa.photos WHERE answer_id = answers.id) AS photos\
+                       FROM qa.answers answers\
+                       WHERE question_id = $1 GROUP BY answers.id\
+                       ORDER BY SUM(answers.helpful) DESC)\
                  AS results)\
            AS questions;',
     values: [req.query.id],
@@ -73,6 +75,7 @@ app.get('/questions/:id/answers', async (req, res) => {
   try {
     console.time('get answers');
     let data = await pool.query(answersConfig);
+
     let results = {
       question: Number(req.query.id),
       results: data.rows[0].questions.results
