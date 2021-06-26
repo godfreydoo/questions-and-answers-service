@@ -11,20 +11,42 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT,
   max: 100,
-  idleTimeoutMillis: 50000,
+  idleTimeoutMillis: 500000,
   connectionTimeoutMillis: 5000,
 })
 
 app.use(express.json());
 
+/*
+-- look into join instead of select sub-query
+
+EXPLAIN ANALYZE SELECT row_to_json(questions) AS questions
+           FROM (SELECT json_agg(results) AS results
+                FROM (SELECT id AS question_id, body AS question_body, date_written AS question_date, asker_name, helpful AS question_helpfulness, reported, (SELECT row_to_json(questions) AS questions
+                    FROM (SELECT array_agg(results) AS results
+                          FROM (SELECT a.id AS answer_id, a.body, a.date_written AS date, a.answerer_name, a.helpful AS helpfulness, (SELECT array_agg(url) AS url FROM qa.photos WHERE answer_id = a.id) AS photos
+                                FROM qa.answers a
+                                WHERE question_id = 532 GROUP BY a.id
+                                ORDER BY a.helpful)
+                          AS results)
+                    AS questions) AS answers
+                      FROM qa.questions
+                      WHERE product_id = 532
+                      GROUP BY id
+                      ORDER BY helpful)
+                AS results)
+           AS questions;
+*/
+
+
 // curl http://localhost:3000/qa/questions/532
 app.get('/questions/:id', async (req, res) => {
   const answers = '(SELECT row_to_json(questions) AS questions\
                     FROM (SELECT array_agg(results) AS results\
-                          FROM (SELECT answers.id AS answer_id, answers.body, answers.date_written AS date, answers.answerer_name, answers.helpful AS helpfulness, (SELECT array_agg(url) AS url FROM qa.photos WHERE answer_id = answers.id) AS photos\
-                                FROM qa.answers answers\
-                                WHERE question_id = $1 GROUP BY answers.id\
-                                ORDER BY SUM(answers.helpful) DESC)\
+                          FROM (SELECT a.id AS answer_id, a.body, a.date_written AS date, a.answerer_name, a.helpful AS helpfulness, (SELECT array_agg(url) AS url FROM qa.photos WHERE answer_id = a.id) AS photos\
+                                FROM qa.answers a\
+                                WHERE question_id = $1 AND reported = false\
+                                ORDER BY a.helpful DESC)\
                           AS results)\
                     AS questions)';
 
@@ -34,9 +56,9 @@ app.get('/questions/:id', async (req, res) => {
            FROM (SELECT json_agg(results) AS results\
                 FROM (SELECT id AS question_id, body AS question_body, date_written AS question_date, asker_name, helpful AS question_helpfulness, reported, ${answers} AS answers\
                       FROM qa.questions\
-                      WHERE product_id = $1\
-                      GROUP BY questions.id\
-                      ORDER BY sum(helpful) DESC)\
+                      WHERE product_id = $1 AND reported = false\
+                      GROUP BY id\
+                      ORDER BY helpful DESC)\
                 AS results)\
            AS questions;`,
     values: [req.query.id],
@@ -48,7 +70,7 @@ app.get('/questions/:id', async (req, res) => {
       product_id: req.query.id,
       results: questionData.rows[0].questions.results
     }
-    console.log(result);
+    console.log(result.results);
     // console.log(result.results[0].answers);
     console.timeEnd('get questions')
     res.end();
@@ -64,10 +86,10 @@ app.get('/questions/:id/answers', async (req, res) => {
     name: 'get answers',
     text: 'SELECT row_to_json(questions) AS questions\
            FROM (SELECT json_agg(results) AS results\
-                 FROM (SELECT answers.id AS answer_id, answers.body, answers.date_written AS date, answers.answerer_name, answers.helpful AS helpfulness, (SELECT array_agg(url) AS url FROM qa.photos WHERE answer_id = answers.id) AS photos\
-                       FROM qa.answers answers\
-                       WHERE question_id = $1 GROUP BY answers.id\
-                       ORDER BY SUM(answers.helpful) DESC)\
+                 FROM (SELECT a.id AS answer_id, a.body, a.date_written AS date, a.answerer_name, a.helpful AS helpfulness, (SELECT array_agg(url) AS url FROM qa.photos WHERE answer_id = a.id) AS photos\
+                       FROM qa.answers a\
+                       WHERE question_id = $1 AND reported = false\
+                       ORDER BY a.helpful DESC)\
                  AS results)\
            AS questions;',
     values: [req.query.id],

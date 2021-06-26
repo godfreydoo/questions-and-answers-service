@@ -40,11 +40,14 @@ CREATE TABLE IF NOT EXISTS qa.photos (
 -- ALTER TABLE qa.answers ADD CONSTRAINT unique_id UNIQUE(id);
 
 CREATE UNIQUE INDEX question_id_qidx ON qa.questions (id);
-CREATE INDEX helpful_qidx ON qa.questions (helpful);
-CREATE INDEX product_id_qidx ON qa.questions (product_id);
+CREATE INDEX product_id_qidx ON qa.questions (product_id, reported); -- multi-column indexes in the where clause
+CREATE INDEX helpful_qidx ON qa.questions (helpful DESC);
+-- CREATE INDEX reported_qidx ON qa.questions (reported) WHERE reported IS FALSE; -- creates a partial index to flag in a batch
+
 
 CREATE UNIQUE INDEX answer_id_aidx ON qa.answers (id);
-CREATE INDEX question_id_aidx ON qa.answers (question_id);
-CREATE INDEX helpful_aidx ON qa.answers (helpful);
+CREATE INDEX question_id_aidx ON qa.answers (question_id, reported); -- multi-column indexes in the where clause
+CREATE INDEX helpful_aidx ON qa.answers (helpful DESC);
+-- CREATE INDEX reported_aidx ON qa.answers (reported) WHERE reported IS FALSE; -- creates a partial index to flag in a batch
 
 CREATE INDEX answer_id_pidx ON qa.photos (answer_id);

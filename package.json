@@ -22,6 +22,7 @@
     "dotenv": "^10.0.0",
     "etl": "^0.6.12",
     "express": "^4.17.1",
+    "jest": "^27.0.5",
     "pg": "^8.6.0"
   },
   "devDependencies": {
