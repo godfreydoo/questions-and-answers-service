@@ -3,7 +3,17 @@ const express = require('express');
 const app = express();
 const PORT = 3001;
 const { Pool } = require('pg');
+const responseTime = require('response-time');
+const { Logger } = require("../logs/logger");
+
 require('dotenv').config({path: '../.env'});
+
+app.use(responseTime(function (req, res, time) {
+  var stat = 'db';
+  Logger.dbQuery(stat, time);
+}))
+
+app.use(express.json());
 
 const pool = new Pool({
   user: process.env.DB_USER,
@@ -15,8 +25,6 @@ const pool = new Pool({
   idleTimeoutMillis: 500000,
   connectionTimeoutMillis: 5000,
 })
-
-app.use(express.json());
 
 /*
 EXPLAIN ANALYZE SELECT row_to_json(questions) AS questions
@@ -65,7 +73,6 @@ app.get('/questions/:id', async (req, res) => {
     values: [req.query.id],
   }
   try {
-    // console.time('get questions');
     let questionData = await pool.query(questionConfig);
     let result = {
       product_id: req.query.id,
@@ -74,7 +81,6 @@ app.get('/questions/:id', async (req, res) => {
     res.status(200).json(result);
     // console.log(result.results);
     // console.log(result.results[0].answers);
-    // console.timeEnd('get questions')
   } catch (err) {
     console.error(e.stack);
     res.status(404).end();
@@ -96,16 +102,16 @@ app.get('/questions/:id/answers', async (req, res) => {
     values: [req.query.id],
   }
   try {
-    // console.time('get answers');
+    // console.time('get answers query');
     let data = await pool.query(answersConfig);
 
-    let results = {
+    let result = {
       question: Number(req.query.id),
       results: data.rows[0].questions.results
     }
+    res.status(200).json(result);
     // console.log(results);
-    // console.timeEnd('get answers')
-    res.status(200).json(data);
+    // console.timeEnd('get answers query')
   } catch (err) {
     console.error(e.stack);
     res.status(404).end()
@@ -117,7 +123,6 @@ app.post('/questions/:id/answers', async (req, res) => {
   const getLatestAnswerId = 'select id from qa.answers order by id desc limit 1;'
   const getLatestPhotoId = 'select id from qa.answers order by id desc limit 1;'
   try {
-    // console.time('post answer');
     let answerId = await pool.query(getLatestAnswerId);
     const answerConfig = {
       name: 'post-answer',
@@ -134,10 +139,9 @@ app.post('/questions/:id/answers', async (req, res) => {
         text: 'insert into qa.photos (id, answer_id, url) values ($1, $2, $3);',
         values: [photoId.rows[0].id + (index + 1), latestAnswerId, value],
       }
-      let response = await pool.query(photoConfig);
+      await pool.query(photoConfig);
     })
     // console.log(response);
-    // console.timeEnd('post answer')
     res.status(201).end()
   } catch (err) {
     console.error(err);
@@ -149,16 +153,13 @@ app.post('/questions/:id/answers', async (req, res) => {
 app.post('/questions', async (req, res) => {
   const getLatestId = 'select id from qa.questions order by id desc limit 1;'
   try {
-    // console.time('post question');
     let data = await pool.query(getLatestId)
     const config = {
       name: 'post-question',
       text: 'insert into qa.questions (id, product_id, body, asker_name, asker_email) values ($1, $2, $3, $4, $5);',
       values: [data.rows[0].id + 1, req.body.product_id, req.body.body, req.body.answerer_name, req.body.answerer_email],
     }
-    let response = await pool.query(config);
-    // console.log(response);
-    // console.timeEnd('post question')
+    await pool.query(config);
     res.status(201).end()
   } catch (err) {
     console.error(err);
@@ -174,10 +175,7 @@ app.put('/questions/:id/helpful', async (req, res) => {
     values: [req.query.id],
   }
   try {
-    // console.time('put-question-helpful');
-    let data = await pool.query(config)
-    // console.log(data);
-    // console.timeEnd('put-question-helpful')
+    await pool.query(config)
     res.status(204).end()
   } catch (err) {
     console.error(err);
@@ -193,10 +191,7 @@ app.put('/answers/:id/helpful', async (req, res) => {
     values: [req.query.id],
   }
   try {
-    // console.time('put-answer-helpful');
-    let data = await pool.query(config)
-    // console.log(data);
-    // console.timeEnd('put-answer-helpful')
+    await pool.query(config)
     res.status(204).end()
   } catch (err) {
     console.error(err);
@@ -211,16 +206,9 @@ app.put('/questions/:id/report', async (req, res) => {
     text: 'update qa.questions set reported = true where id = $1;',
     values: [req.query.id],
   }
-  const check = {
-    name: 'confirm-put-question-report',
-    text: 'select reported from qa.questions where id = $1;',
-    values: [req.query.id],
-  }
   try {
     // console.time('put-question-report');
-    let response = await pool.query(config);
-    let data = await pool.query(check);
-    // console.log(data.rows[0].reported === true);
+    await pool.query(config);
     // console.timeEnd('put-question-report')
     res.status(204).end()
   } catch (err) {
@@ -236,31 +224,14 @@ app.put('/answers/:id/report', async (req, res) => {
     text: 'update qa.answers set reported = true where id = $1;',
     values: [req.query.id],
   }
-  const check = {
-    name: 'confirm-put-answer-report',
-    text: 'select reported from qa.answers where id = $1;',
-    values: [req.query.id],
-  }
   try {
-    // console.time('put-answer-report');
-    let response = await pool.query(config);
-    let data = await pool.query(check);
-    // console.log(data.rows[0].reported === true);
-    // console.timeEnd('put-answer-report');
+    await pool.query(config);
     res.status(204).end()
   } catch (err) {
     console.error(err);
     res.status(404).end()
   }
 });
-
-
-
-
-
-
-
-
 
 
 const server = app.listen(PORT, () => {

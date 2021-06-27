@@ -3,6 +3,13 @@ const axios = require('axios');
 const router = express.Router();
 const path = require('path');
 const registry = require('./registry.json');
+const responseTime = require('response-time');
+const { Logger } = require("../logs/logger");
+
+router.use(responseTime(function (req, res, time) {
+  var stat = (req.method + req.url).toLowerCase();
+  Logger.request(stat, time);
+}))
 
 /////////////
 // ANSWERS //
@@ -12,11 +19,11 @@ router.all('/:apiName/:path/:id/answers', (req, res) => {
   if (registry.services[req.params.apiName]) {
     axios({ method: req.method, url: url, headers: req.headers, data: req.body, params: req.params })
       .then(response => {
-        res.send(response.data);
+        res.status(200).json(response.data);
       })
       .catch(err => {
         console.log(`Router ${err}`);
-        res.end();
+        res.status(404).end()
       })
   } else {
     res.send('API does not exist');
@@ -31,11 +38,11 @@ router.all('/:apiName/:path/:id', (req, res) => {
   if (registry.services[req.params.apiName]) {
     axios({ method: req.method, url: url, headers: req.headers, data: req.body, params: req.params })
       .then(response => {
-        res.send(response.data);
+        res.status(200).json(response.data);
       })
       .catch(err => {
         console.log(`Router ${err}`);
-        res.end();
+        res.status(404).end()
       })
   } else {
     res.send('API does not exist');
@@ -49,12 +56,12 @@ router.put('/:apiName/:path/:id/helpful', (req, res) => {
   const url = `${registry.services[req.params.apiName].url}${req.params.path}/${req.params.id}/helpful`;
   if (registry.services[req.params.apiName]) {
     axios({ method: req.method, url: url, headers: req.headers, data: req.body, params: req.params })
-      .then(response => {
-        res.send(response.data);
+      .then(() => {
+        res.status(204).end()
       })
       .catch(err => {
         console.log(`Router ${err}`);
-        res.end();
+        res.status(404).end()
       })
   } else {
     res.send('API does not exist');
@@ -68,12 +75,12 @@ router.put('/:apiName/:path/:id/report', (req, res) => {
   const url = `${registry.services[req.params.apiName].url}${req.params.path}/${req.params.id}/report`;
   if (registry.services[req.params.apiName]) {
     axios({ method: req.method, url: url, headers: req.headers, data: req.body, params: req.params })
-      .then(response => {
-        res.send(response.data);
+      .then(() => {
+        res.status(204).end();
       })
       .catch(err => {
         console.log(`Router ${err}`);
-        res.end();
+        res.status(404).end()
       })
   } else {
     res.send('API does not exist');
@@ -87,12 +94,12 @@ router.post('/:apiName/:path', (req, res) => {
   const url = `${registry.services[req.params.apiName].url}${req.params.path}`;
   if (registry.services[req.params.apiName]) {
     axios({ method: req.method, url: url, headers: req.headers, data: req.body, params: req.params })
-      .then(response => {
-        res.send(response.data);
+      .then(() => {
+        res.status(204).end();
       })
       .catch(err => {
         console.log(`Router ${err}`);
-        res.end();
+        res.status(404).end()
       })
   } else {
     res.send('API does not exist');

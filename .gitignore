@@ -7,3 +7,5 @@ questions.csv
 helpful.sql
 newrelic.js
 newrelic_agent.log
+dbQuery.txt
+httpRequest.txt

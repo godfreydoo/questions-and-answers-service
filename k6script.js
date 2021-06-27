@@ -9,8 +9,11 @@ export let options = {
     'groupDuration{groupName:individualRequests}': ['avg < 50'],
     'groupDuration{groupName:batchRequests}': ['avg < 50'],
   },
-  vus: 100,
-  duration: '10s'
+  stages: [
+    { duration: '5s', target: 5 },
+    { duration: '5s', target: 50 },
+    { duration: '10s', target: 500 },
+  ],
 };
 
 function groupWithDurationMetric(name, group_function) {
