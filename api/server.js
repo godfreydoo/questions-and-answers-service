@@ -33,14 +33,16 @@ EXPLAIN ANALYZE SELECT row_to_json(questions) AS questions
                     FROM (SELECT array_agg(results) AS results
                           FROM (SELECT a.id AS answer_id, a.body, a.date_written AS date, a.answerer_name, a.helpful AS helpfulness, (SELECT array_agg(url) AS url FROM qa.photos WHERE answer_id = a.id) AS photos
                                 FROM qa.answers a
-                                WHERE question_id = 532 GROUP BY a.id
-                                ORDER BY a.helpful)
+                                WHERE question_id = qa.questions.id AND reported = false
+                                ORDER BY a.helpful DESC
+                                LIMIT 5)
                           AS results)
                     AS questions) AS answers
                       FROM qa.questions
-                      WHERE product_id = 532
-                      GROUP BY id
-                      ORDER BY helpful)
+                      WHERE product_id = 532 AND reported = false
+                      ORDER BY helpful DESC
+                      LIMIT 5
+                      OFFSET 10)
                 AS results)
            AS questions;
 
@@ -48,14 +50,26 @@ EXPLAIN ANALYZE SELECT row_to_json(questions) AS questions
 -- look into not using join and doing any data manipulation on server-side
 */
 
-// curl -s http://localhost:3000/qa/questions/532 > /dev/null
-app.get('/questions/:id', async (req, res) => {
+// curl -s 'http://localhost:3000/qa/questions?product_id=532&page=1&count=999' > /dev/null
+app.get('/questions', async (req, res) => {
+  const pageSize = 5;
+  var count = Math.min(Number(req.query.count), 200) || 5;
+  var page = Number(req.query.page) || 1;
+  var offset;
+
+  if (page === 1) {
+    offset = 0;
+  } else {
+    offset = page * pageSize;
+  }
+
   const answers = '(SELECT row_to_json(questions) AS questions\
                     FROM (SELECT array_agg(results) AS results\
                           FROM (SELECT a.id AS answer_id, a.body, a.date_written AS date, a.answerer_name, a.helpful AS helpfulness, (SELECT array_agg(url) AS url FROM qa.photos WHERE answer_id = a.id) AS photos\
                                 FROM qa.answers a\
-                                WHERE question_id = $1 AND reported = false\
-                                ORDER BY a.helpful DESC)\
+                                WHERE question_id = qa.questions.id AND reported = false\
+                                ORDER BY a.helpful DESC\
+                                LIMIT $2)\
                           AS results)\
                     AS questions)';
 
@@ -67,28 +81,41 @@ app.get('/questions/:id', async (req, res) => {
                       FROM qa.questions\
                       WHERE product_id = $1 AND reported = false\
                       GROUP BY id\
-                      ORDER BY helpful DESC)\
+                      ORDER BY helpful DESC\
+                      LIMIT $2
+                      OFFSET $3)\
                 AS results)\
            AS questions;`,
-    values: [req.query.id],
+    values: [req.query.product_id, count, offset],
   }
   try {
     let questionData = await pool.query(questionConfig);
     let result = {
-      product_id: req.query.id,
-      results: questionData.rows[0].questions.results
+      product_id: req.query.product_id,
+      results: questionData.rows[0].questions.results || [],
     }
     res.status(200).json(result);
     // console.log(result.results);
     // console.log(result.results[0].answers);
   } catch (err) {
-    console.error(e.stack);
+    console.error(err.stack);
     res.status(404).end();
   }
 });
 
-// curl -s http://localhost:3000/qa/questions/222/answers > /dev/null
+// curl -s 'http://localhost:3000/qa/questions/222/answers?page=1&count=999' > /dev/null
 app.get('/questions/:id/answers', async (req, res) => {
+  const pageSize = 5;
+  var count = Math.min(Number(req.query.count), 200) || 5;
+  var page = Number(req.query.page) || 1;
+  var offset;
+
+  if (page === 1) {
+    offset = 0;
+  } else {
+    offset = page * pageSize;
+  }
+
   const answersConfig = {
     name: 'get answers',
     text: 'SELECT row_to_json(questions) AS questions\
@@ -96,24 +123,26 @@ app.get('/questions/:id/answers', async (req, res) => {
                  FROM (SELECT a.id AS answer_id, a.body, a.date_written AS date, a.answerer_name, a.helpful AS helpfulness, (SELECT array_agg(url) AS url FROM qa.photos WHERE answer_id = a.id) AS photos\
                        FROM qa.answers a\
                        WHERE question_id = $1 AND reported = false\
-                       ORDER BY a.helpful DESC)\
+                       ORDER BY a.helpful DESC\
+                       LIMIT $2\
+                       OFFSET $3)\
                  AS results)\
            AS questions;',
-    values: [req.query.id],
+    values: [req.params.id, count, offset],
   }
   try {
-    // console.time('get answers query');
     let data = await pool.query(answersConfig);
 
     let result = {
-      question: Number(req.query.id),
-      results: data.rows[0].questions.results
+      question: req.params.id,
+      page: page,
+      count: count,
+      results: data.rows[0].questions.results || [],
     }
     res.status(200).json(result);
     // console.log(results);
-    // console.timeEnd('get answers query')
   } catch (err) {
-    console.error(e.stack);
+    console.error(err.stack);
     res.status(404).end()
   }
 });
@@ -144,7 +173,7 @@ app.post('/questions/:id/answers', async (req, res) => {
     // console.log(response);
     res.status(201).end()
   } catch (err) {
-    console.error(err);
+    console.error(err.stack);
     res.status(404).end()
   }
 });
@@ -162,7 +191,7 @@ app.post('/questions', async (req, res) => {
     await pool.query(config);
     res.status(201).end()
   } catch (err) {
-    console.error(err);
+    console.error(err.stack);
     res.status(404).end()
   }
 });
@@ -178,7 +207,7 @@ app.put('/questions/:id/helpful', async (req, res) => {
     await pool.query(config)
     res.status(204).end()
   } catch (err) {
-    console.error(err);
+    console.error(err.stack);
     res.status(404).end()
   }
 });
@@ -194,7 +223,7 @@ app.put('/answers/:id/helpful', async (req, res) => {
     await pool.query(config)
     res.status(204).end()
   } catch (err) {
-    console.error(err);
+    console.error(err.stack);
     res.status(404).end()
   }
 });
@@ -207,12 +236,10 @@ app.put('/questions/:id/report', async (req, res) => {
     values: [req.query.id],
   }
   try {
-    // console.time('put-question-report');
     await pool.query(config);
-    // console.timeEnd('put-question-report')
     res.status(204).end()
   } catch (err) {
-    console.error(err);
+    console.error(err.stack);
     res.status(404).end()
   }
 });

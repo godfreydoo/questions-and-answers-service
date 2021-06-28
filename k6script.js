@@ -7,13 +7,21 @@ let groupDuration = Trend("groupDuration");
 export let options = {
   thresholds: {
     'groupDuration{groupName:individualRequests}': ['avg < 50'],
-    'groupDuration{groupName:batchRequests}': ['avg < 50'],
+    'groupDuration{groupName:batchRequests}': ['avg < 50']
   },
-  stages: [
-    { duration: '5s', target: 5 },
-    { duration: '5s', target: 50 },
-    { duration: '10s', target: 500 },
-  ],
+  scenarios: {
+    contacts: {
+      executor: 'ramping-vus',
+      startVUs: 1,
+      stages: [
+        { duration: '5s', target: 5 },
+        { duration: '5s', target: 50 },
+        { duration: '10s', target: 500 },
+      ],
+      gracefulRampDown: '10s',
+      gracefulStop: '10s'
+    },
+  },
 };
 
 function groupWithDurationMetric(name, group_function) {

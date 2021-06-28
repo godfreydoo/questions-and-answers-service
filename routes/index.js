@@ -11,13 +11,14 @@ router.use(responseTime(function (req, res, time) {
   Logger.request(stat, time);
 }))
 
-/////////////
-// ANSWERS //
-/////////////
-router.all('/:apiName/:path/:id/answers', (req, res) => {
-  const url = `${registry.services[req.params.apiName].url}${req.params.path}/${req.params.id}/answers`;
+
+///////////////
+// QUESTIONS //
+///////////////
+router.all('/:apiName/:path', (req, res) => {
+  const url = `${registry.services[req.params.apiName].url}${req.params.path}`;
   if (registry.services[req.params.apiName]) {
-    axios({ method: req.method, url: url, headers: req.headers, data: req.body, params: req.params })
+    axios({ method: req.method, url: url, headers: req.headers, data: req.body, params: req.query })
       .then(response => {
         res.status(200).json(response.data);
       })
@@ -30,13 +31,14 @@ router.all('/:apiName/:path/:id/answers', (req, res) => {
   }
 })
 
-///////////////
-// QUESTIONS //
-///////////////
-router.all('/:apiName/:path/:id', (req, res) => {
-  const url = `${registry.services[req.params.apiName].url}${req.params.path}/${req.params.id}`;
+
+/////////////
+// ANSWERS //
+/////////////
+router.all('/:apiName/:path/:id/answers', (req, res) => {
+  const url = `${registry.services[req.params.apiName].url}${req.params.path}/${req.params.id}/answers`;
   if (registry.services[req.params.apiName]) {
-    axios({ method: req.method, url: url, headers: req.headers, data: req.body, params: req.params })
+    axios({ method: req.method, url: url, headers: req.headers, data: req.body, params: req.query, query: req.params})
       .then(response => {
         res.status(200).json(response.data);
       })
