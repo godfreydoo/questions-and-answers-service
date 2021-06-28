@@ -26,31 +26,8 @@ const pool = new Pool({
   connectionTimeoutMillis: 5000,
 })
 
-/*
-EXPLAIN ANALYZE SELECT row_to_json(questions) AS questions
-           FROM (SELECT json_agg(results) AS results
-                FROM (SELECT id AS question_id, body AS question_body, date_written AS question_date, asker_name, helpful AS question_helpfulness, reported, (SELECT row_to_json(questions) AS questions
-                    FROM (SELECT array_agg(results) AS results
-                          FROM (SELECT a.id AS answer_id, a.body, a.date_written AS date, a.answerer_name, a.helpful AS helpfulness, (SELECT array_agg(url) AS url FROM qa.photos WHERE answer_id = a.id) AS photos
-                                FROM qa.answers a
-                                WHERE question_id = qa.questions.id AND reported = false
-                                ORDER BY a.helpful DESC
-                                LIMIT 5)
-                          AS results)
-                    AS questions) AS answers
-                      FROM qa.questions
-                      WHERE product_id = 532 AND reported = false
-                      ORDER BY helpful DESC
-                      LIMIT 5
-                      OFFSET 10)
-                AS results)
-           AS questions;
-
--- look into join instead of select sub-query
--- look into not using join and doing any data manipulation on server-side
-*/
-
 // curl -s 'http://localhost:3000/qa/questions?product_id=532&page=1&count=999' > /dev/null
+// curl -s 'http://localhost:3000/qa/questions?product_id=532&page=1&count=5' > /dev/null
 app.get('/questions', async (req, res) => {
   const pageSize = 5;
   var count = Math.min(Number(req.query.count), 200) || 5;
@@ -63,29 +40,29 @@ app.get('/questions', async (req, res) => {
     offset = page * pageSize;
   }
 
-  const answers = '(SELECT row_to_json(questions) AS questions\
-                    FROM (SELECT array_agg(results) AS results\
-                          FROM (SELECT a.id AS answer_id, a.body, a.date_written AS date, a.answerer_name, a.helpful AS helpfulness, (SELECT array_agg(url) AS url FROM qa.photos WHERE answer_id = a.id) AS photos\
-                                FROM qa.answers a\
-                                WHERE question_id = qa.questions.id AND reported = false\
-                                ORDER BY a.helpful DESC\
-                                LIMIT $2)\
-                          AS results)\
-                    AS questions)';
 
   const questionConfig = {
     name: 'get questions',
-    text: `SELECT row_to_json(questions) AS questions\
-           FROM (SELECT json_agg(results) AS results\
-                FROM (SELECT id AS question_id, body AS question_body, date_written AS question_date, asker_name, helpful AS question_helpfulness, reported, ${answers} AS answers\
-                      FROM qa.questions\
-                      WHERE product_id = $1 AND reported = false\
-                      GROUP BY id\
-                      ORDER BY helpful DESC\
-                      LIMIT $2
-                      OFFSET $3)\
-                AS results)\
-           AS questions;`,
+    text:   `SELECT row_to_json(questions) AS questions\
+             FROM (SELECT json_agg(results) AS results\
+                   FROM (SELECT id AS question_id, body AS question_body, date_written AS question_date, asker_name, helpful AS question_helpfulness, reported, answer.details AS answers\
+                         FROM qa.questions\
+                         LEFT JOIN LATERAL (SELECT row_to_json(details) AS details\
+                                            FROM (SELECT array_agg(results) AS results\
+                                                  FROM (SELECT a.id AS answer_id, a.body, a.date_written AS date, a.answerer_name, a.helpful AS helpfulness, photo.url AS photos\
+                                                        FROM qa.answers a\
+                                                        LEFT JOIN LATERAL (SELECT array_agg(url) AS url FROM qa.photos WHERE answer_id = a.id) photo ON true\
+                                                                           WHERE question_id = qa.questions.id AND reported = false\
+                                                                           ORDER BY a.helpful DESC\
+                                                                           LIMIT $2)\
+                                                  AS results)\
+                                            AS details) AS answer ON true\
+                         WHERE product_id = $1 AND reported = false\
+                         ORDER BY helpful DESC\
+                         LIMIT $2\
+                         OFFSET $3)\
+                   AS results)\
+            AS questions;`,
     values: [req.query.product_id, count, offset],
   }
   try {
@@ -104,6 +81,7 @@ app.get('/questions', async (req, res) => {
 });
 
 // curl -s 'http://localhost:3000/qa/questions/222/answers?page=1&count=999' > /dev/null
+// curl -s 'http://localhost:3000/qa/questions/1/answers?page=1&count=999' > /dev/null
 app.get('/questions/:id/answers', async (req, res) => {
   const pageSize = 5;
   var count = Math.min(Number(req.query.count), 200) || 5;
@@ -120,8 +98,12 @@ app.get('/questions/:id/answers', async (req, res) => {
     name: 'get answers',
     text: 'SELECT row_to_json(questions) AS questions\
            FROM (SELECT json_agg(results) AS results\
-                 FROM (SELECT a.id AS answer_id, a.body, a.date_written AS date, a.answerer_name, a.helpful AS helpfulness, (SELECT array_agg(url) AS url FROM qa.photos WHERE answer_id = a.id) AS photos\
+                 FROM (SELECT a.id AS answer_id, a.body, a.date_written AS date, a.answerer_name, a.helpful AS helpfulness, photo.url AS photos\
                        FROM qa.answers a\
+                       LEFT JOIN LATERAL (SELECT array_agg(url) AS url\
+                                  FROM qa.photos\
+                                  WHERE answer_id = a.id\
+                                  ) photo ON true\
                        WHERE question_id = $1 AND reported = false\
                        ORDER BY a.helpful DESC\
                        LIMIT $2\
