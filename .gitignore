@@ -9,3 +9,5 @@ newrelic.js
 newrelic_agent.log
 dbQuery.txt
 httpRequest.txt
+godfreysdc.pem
+deployment.md

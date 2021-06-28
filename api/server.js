@@ -21,7 +21,7 @@ const pool = new Pool({
   database: process.env.DB_DATABASE,
   password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT,
-  max: 100,
+  max: 90,
   idleTimeoutMillis: 0,
   connectionTimeoutMillis: 0,
 })
@@ -43,7 +43,7 @@ app.get('/questions', async (req, res) => {
 
   const questionConfig = {
     name: 'get questions',
-    text:   `SELECT row_to_json(questions) AS questions\
+    text: `SELECT row_to_json(questions) AS questions\
              FROM (SELECT json_agg(results) AS results\
                    FROM (SELECT id AS question_id, body AS question_body, date_written AS question_date, asker_name, helpful AS question_helpfulness, reported, answer.details AS answers\
                          FROM qa.questions\
@@ -51,14 +51,16 @@ app.get('/questions', async (req, res) => {
                                             FROM (SELECT array_agg(results) AS results\
                                                   FROM (SELECT a.id AS answer_id, a.body, a.date_written AS date, a.answerer_name, a.helpful AS helpfulness, photo.url AS photos\
                                                         FROM qa.answers a\
-                                                        LEFT JOIN LATERAL (SELECT array_agg(url) AS url FROM qa.photos WHERE answer_id = a.id) photo ON true\
-                                                                           WHERE question_id = qa.questions.id AND reported = false\
-                                                                           ORDER BY a.helpful DESC\
-                                                                           LIMIT $2)\
+                                                        LEFT JOIN LATERAL (SELECT array_agg(url) AS url
+                                                                           FROM qa.photos
+                                                                           WHERE answer_id = a.id) photo ON true\
+                                                        WHERE question_id = qa.questions.id AND reported = false\
+                                                        ORDER BY a.helpful DESC\
+                                                        LIMIT $2)\
                                                   AS results)\
                                             AS details) AS answer ON true\
                          WHERE product_id = $1 AND reported = false\
-                         ORDER BY helpful DESC\
+                         ORDER BY qa.questions.helpful DESC\
                          LIMIT $2\
                          OFFSET $3)\
                    AS results)\
@@ -101,9 +103,8 @@ app.get('/questions/:id/answers', async (req, res) => {
                  FROM (SELECT a.id AS answer_id, a.body, a.date_written AS date, a.answerer_name, a.helpful AS helpfulness, photo.url AS photos\
                        FROM qa.answers a\
                        LEFT JOIN LATERAL (SELECT array_agg(url) AS url\
-                                  FROM qa.photos\
-                                  WHERE answer_id = a.id\
-                                  ) photo ON true\
+                                          FROM qa.photos\
+                                          WHERE answer_id = a.id) photo ON true\
                        WHERE question_id = $1 AND reported = false\
                        ORDER BY a.helpful DESC\
                        LIMIT $2\
