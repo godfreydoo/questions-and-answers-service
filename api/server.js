@@ -22,8 +22,8 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT,
   max: 100,
-  idleTimeoutMillis: 500000,
-  connectionTimeoutMillis: 5000,
+  idleTimeoutMillis: 0,
+  connectionTimeoutMillis: 0,
 })
 
 // curl -s 'http://localhost:3000/qa/questions?product_id=532&page=1&count=999' > /dev/null
@@ -75,7 +75,7 @@ app.get('/questions', async (req, res) => {
     // console.log(result.results);
     // console.log(result.results[0].answers);
   } catch (err) {
-    console.error(err.stack);
+    console.error(err);
     res.status(404).end();
   }
 });
@@ -114,7 +114,6 @@ app.get('/questions/:id/answers', async (req, res) => {
   }
   try {
     let data = await pool.query(answersConfig);
-
     let result = {
       question: req.params.id,
       page: page,
@@ -124,56 +123,48 @@ app.get('/questions/:id/answers', async (req, res) => {
     res.status(200).json(result);
     // console.log(results);
   } catch (err) {
-    console.error(err.stack);
+    console.error(err);
     res.status(404).end()
   }
 });
 
 // curl --header "Content-Type: application/json" --request POST --data '{"question_id":532,"body":"Does this work testing testing","answerer_name":"godfrey","answerer_email":"g@g.com","photos":["oogie boogie"]}' http://localhost:3000/qa/questions/532/answers
 app.post('/questions/:id/answers', async (req, res) => {
-  const getLatestAnswerId = 'select id from qa.answers order by id desc limit 1;'
-  const getLatestPhotoId = 'select id from qa.answers order by id desc limit 1;'
+
   try {
-    let answerId = await pool.query(getLatestAnswerId);
     const answerConfig = {
       name: 'post-answer',
-      text: 'insert into qa.answers (id, question_id, body, answerer_name, answerer_email) values ($1, $2, $3, $4, $5) returning id;',
-      values: [answerId.rows[0].id + 1, req.body.question_id, req.body.body, req.body.answerer_name, req.body.answerer_email],
+      text: 'insert into qa.answers (question_id, body, answerer_name, answerer_email) values ($1, $2, $3, $4) returning id;',
+      values: [req.body.question_id, req.body.body, req.body.answerer_name, req.body.answerer_email],
     }
     var response = await pool.query(answerConfig);
-
-    let latestAnswerId = response.rows[0].id
-    let photoId = await pool.query(getLatestPhotoId);
     await req.body.photos.forEach(async (value, index) => {
       let photoConfig = {
         name: 'post-photo',
-        text: 'insert into qa.photos (id, answer_id, url) values ($1, $2, $3);',
-        values: [photoId.rows[0].id + (index + 1), latestAnswerId, value],
+        text: 'insert into qa.photos (answer_id, url) values ($1, $2);',
+        values: [response.rows[0].id, value],
       }
       await pool.query(photoConfig);
     })
-    // console.log(response);
     res.status(201).end()
   } catch (err) {
-    console.error(err.stack);
+    console.error(err);
     res.status(404).end()
   }
 });
 
 // curl --header "Content-Type: application/json" --request POST --data '{"product_id":17067,"body":"Does this work testing testing","answerer_name":"godfrey","answerer_email":"g@g.com"}' http://localhost:3000/qa/questions/
 app.post('/questions', async (req, res) => {
-  const getLatestId = 'select id from qa.questions order by id desc limit 1;'
   try {
-    let data = await pool.query(getLatestId)
     const config = {
       name: 'post-question',
-      text: 'insert into qa.questions (id, product_id, body, asker_name, asker_email) values ($1, $2, $3, $4, $5);',
-      values: [data.rows[0].id + 1, req.body.product_id, req.body.body, req.body.answerer_name, req.body.answerer_email],
+      text: 'insert into qa.questions (product_id, body, asker_name, asker_email) values ($1, $2, $3, $4);',
+      values: [req.body.product_id, req.body.body, req.body.answerer_name, req.body.answerer_email],
     }
     await pool.query(config);
     res.status(201).end()
   } catch (err) {
-    console.error(err.stack);
+    console.error(err);
     res.status(404).end()
   }
 });
@@ -189,7 +180,7 @@ app.put('/questions/:id/helpful', async (req, res) => {
     await pool.query(config)
     res.status(204).end()
   } catch (err) {
-    console.error(err.stack);
+    console.error(err);
     res.status(404).end()
   }
 });
@@ -205,7 +196,7 @@ app.put('/answers/:id/helpful', async (req, res) => {
     await pool.query(config)
     res.status(204).end()
   } catch (err) {
-    console.error(err.stack);
+    console.error(err);
     res.status(404).end()
   }
 });
@@ -221,7 +212,7 @@ app.put('/questions/:id/report', async (req, res) => {
     await pool.query(config);
     res.status(204).end()
   } catch (err) {
-    console.error(err.stack);
+    console.error(err);
     res.status(404).end()
   }
 });

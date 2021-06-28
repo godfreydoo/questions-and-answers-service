@@ -35,19 +35,19 @@ CREATE TABLE IF NOT EXISTS qa.photos (
   url varchar(256)
 );
 
--- ALTER TABLE qa.answers ALTER helpful SET DEFAULT 0;
--- ALTER TABLE qa.questions ALTER helpful SET DEFAULT 0;
--- ALTER TABLE qa.answers ADD CONSTRAINT unique_id UNIQUE(id);
+-- ALTER TABLE qa.questions ADD COLUMN time_holder TEXT;
+-- ALTER TABLE qa.answers ADD COLUMN time_holder TEXT;
 
 CREATE UNIQUE INDEX question_id_qidx ON qa.questions (id);
 CREATE INDEX product_id_qidx ON qa.questions (product_id, reported); -- multi-column indexes in the where clause
 CREATE INDEX helpful_qidx ON qa.questions (helpful DESC);
--- CREATE INDEX reported_qidx ON qa.questions (reported) WHERE reported IS FALSE; -- creates a partial index to flag in a batch
+-- CREATE INDEX date_qidx ON qa.questions (date_written);
 
 
 CREATE UNIQUE INDEX answer_id_aidx ON qa.answers (id);
 CREATE INDEX question_id_aidx ON qa.answers (question_id, reported); -- multi-column indexes in the where clause
 CREATE INDEX helpful_aidx ON qa.answers (helpful DESC);
--- CREATE INDEX reported_aidx ON qa.answers (reported) WHERE reported IS FALSE; -- creates a partial index to flag in a batch
+-- CREATE INDEX date_aidx ON qa.questions (date_written);
+
 
 CREATE INDEX answer_id_pidx ON qa.photos (answer_id);
