@@ -5,6 +5,7 @@ const PORT = 3001;
 const { Pool } = require('pg');
 const responseTime = require('response-time');
 const { Logger } = require("../logs/logger");
+const bunyan = require('bunyan');
 
 require('dotenv').config({path: '../.env'});
 
@@ -26,10 +27,7 @@ const pool = new Pool({
   connectionTimeoutMillis: 0,
 })
 
-// curl -s 'http://localhost:3000/qa/questions?product_id=532&page=1&count=999' > /dev/null
-// curl -s 'http://localhost:3000/qa/questions?product_id=532&page=1&count=5' > /dev/null
 app.get('/questions', async (req, res) => {
-  console.log('questions api received request');
   const pageSize = 5;
   var count = Math.min(Number(req.query.count), 200) || 5;
   var page = Number(req.query.page) || 1;
@@ -75,18 +73,13 @@ app.get('/questions', async (req, res) => {
       results: questionData.rows[0].questions.results || [],
     }
     res.status(200).json(result);
-    // console.log(result.results);
-    // console.log(result.results[0].answers);
   } catch (err) {
     console.error(err);
     res.status(404).end();
   }
 });
 
-// curl -s 'http://localhost:3000/qa/questions/222/answers?page=1&count=999' > /dev/null
-// curl -s 'http://localhost:3000/qa/questions/1/answers?page=1&count=999' > /dev/null
 app.get('/questions/:id/answers', async (req, res) => {
-  console.log('answer api received request');
   const pageSize = 5;
   var count = Math.min(Number(req.query.count), 200) || 5;
   var page = Number(req.query.page) || 1;
@@ -124,14 +117,13 @@ app.get('/questions/:id/answers', async (req, res) => {
       results: data.rows[0].questions.results || [],
     }
     res.status(200).json(result);
-    // console.log(results);
   } catch (err) {
     console.error(err);
     res.status(404).end()
   }
 });
 
-// curl --header "Content-Type: application/json" --request POST --data '{"question_id":532,"body":"Does this work testing testing","answerer_name":"godfrey","answerer_email":"g@g.com","photos":["oogie boogie"]}' http://localhost:3000/qa/questions/532/answers
+
 app.post('/questions/:id/answers', async (req, res) => {
 
   try {
@@ -156,7 +148,7 @@ app.post('/questions/:id/answers', async (req, res) => {
   }
 });
 
-// curl --header "Content-Type: application/json" --request POST --data '{"product_id":17067,"body":"Does this work testing testing","answerer_name":"godfrey","answerer_email":"g@g.com"}' http://localhost:3000/qa/questions/
+
 app.post('/questions', async (req, res) => {
   try {
     const config = {
@@ -172,7 +164,7 @@ app.post('/questions', async (req, res) => {
   }
 });
 
-// curl -X PUT http://localhost:3000/qa/questions/523/helpful
+
 app.put('/questions/:id/helpful', async (req, res) => {
   const config = {
     name: 'put-question-helpful',
@@ -188,7 +180,7 @@ app.put('/questions/:id/helpful', async (req, res) => {
   }
 });
 
-// curl -X PUT http://localhost:3000/qa/answers/18/helpful
+
 app.put('/answers/:id/helpful', async (req, res) => {
   const config = {
     name: 'put-answer-helpful',
@@ -204,7 +196,7 @@ app.put('/answers/:id/helpful', async (req, res) => {
   }
 });
 
-// curl -X PUT http://localhost:3000/qa/questions/523/report
+
 app.put('/questions/:id/report', async (req, res) => {
   const config = {
     name: 'put-question-report',
@@ -220,7 +212,7 @@ app.put('/questions/:id/report', async (req, res) => {
   }
 });
 
-// curl -X PUT http://localhost:3000/qa/answers/18/report
+
 app.put('/answers/:id/report', async (req, res) => {
   const config = {
     name: 'put-answer-report',
@@ -237,6 +229,7 @@ app.put('/answers/:id/report', async (req, res) => {
 });
 
 
+// Connect to server and database to prevent connection frequency with each query
 const server = app.listen(PORT, () => {
   pool.connect(() => {
     console.log(`Database is connected on ${PORT}`);
