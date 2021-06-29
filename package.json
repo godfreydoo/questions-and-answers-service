@@ -19,6 +19,7 @@
   "homepage": "https://github.com/SDC-Team-Frodo/questions-and-answers-service#readme",
   "dependencies": {
     "axios": "^0.21.1",
+    "bunyan": "^1.8.15",
     "dotenv": "^10.0.0",
     "etl": "^0.6.12",
     "express": "^4.17.1",
