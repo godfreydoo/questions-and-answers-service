@@ -29,6 +29,7 @@ const pool = new Pool({
 // curl -s 'http://localhost:3000/qa/questions?product_id=532&page=1&count=999' > /dev/null
 // curl -s 'http://localhost:3000/qa/questions?product_id=532&page=1&count=5' > /dev/null
 app.get('/questions', async (req, res) => {
+  console.log('questions api received request');
   const pageSize = 5;
   var count = Math.min(Number(req.query.count), 200) || 5;
   var page = Number(req.query.page) || 1;
@@ -85,6 +86,7 @@ app.get('/questions', async (req, res) => {
 // curl -s 'http://localhost:3000/qa/questions/222/answers?page=1&count=999' > /dev/null
 // curl -s 'http://localhost:3000/qa/questions/1/answers?page=1&count=999' > /dev/null
 app.get('/questions/:id/answers', async (req, res) => {
+  console.log('answer api received request');
   const pageSize = 5;
   var count = Math.min(Number(req.query.count), 200) || 5;
   var page = Number(req.query.page) || 1;

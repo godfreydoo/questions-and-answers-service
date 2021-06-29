@@ -9,5 +9,6 @@ newrelic.js
 newrelic_agent.log
 dbQuery.txt
 httpRequest.txt
-godfreysdc.pem
+ec2-qa-postgres.pem
+catborg.pem
 deployment.md

@@ -17,6 +17,7 @@ router.use(responseTime(function (req, res, time) {
 ///////////////
 router.all('/:apiName/:path', (req, res) => {
   const url = `${registry.services[req.params.apiName].url}${req.params.path}`;
+  console.log(url);
   if (registry.services[req.params.apiName]) {
     axios({ method: req.method, url: url, headers: req.headers, data: req.body, params: req.query })
       .then(response => {
@@ -37,6 +38,7 @@ router.all('/:apiName/:path', (req, res) => {
 /////////////
 router.all('/:apiName/:path/:id/answers', (req, res) => {
   const url = `${registry.services[req.params.apiName].url}${req.params.path}/${req.params.id}/answers`;
+  console.log(url);
   if (registry.services[req.params.apiName]) {
     axios({ method: req.method, url: url, headers: req.headers, data: req.body, params: req.query, query: req.params})
       .then(response => {
