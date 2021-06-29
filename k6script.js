@@ -18,16 +18,16 @@ export let options = {
     constant_request_rate: {
       executor: 'constant-arrival-rate',
       rate: 100,
-      timeUnit: '1s',
-      duration: '30s',
+      timeUnit: '1.5s',
+      duration: '150s',
       preAllocatedVUs: 20,
       maxVUs: 100,
     },
   },
 };
 
-var idx = __VU;
-var answersUrl = `http://localhost:3000/qa/questions/${idx}/answers`;
+var idx = __VU + 1;
+var answersUrl = `http://localhost:3000/qa/questions/1/answers`;
 var questionsUrl = 'http://localhost:3000/qa/questions/'
 
 var answersPayload = JSON.stringify({
@@ -37,7 +37,7 @@ var answersPayload = JSON.stringify({
   photos:["oogie boogie", "oogie boogie"]
 });
 var questionsPayload = JSON.stringify({
-  product_id: __VU,
+  product_id: 1,
   body: "Does this work testing testing",
   answerer_name: "godfrey",
   answerer_email: "g@g.com",

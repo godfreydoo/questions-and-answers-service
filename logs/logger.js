@@ -10,6 +10,6 @@ Logger.request = function(stat, time) {
 };
 
 Logger.dbQuery = function(stat, time) {
-  var message = `${time} \n`;
+  var message = `${stat}-${time} \n`;
   dbQueryStream.write(message);
 };

@@ -22,7 +22,7 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT,
   max: 90,
-  idleTimeoutMillis: 0,
+  idleTimeoutMillis: 2500,
   connectionTimeoutMillis: 0,
 })
 
