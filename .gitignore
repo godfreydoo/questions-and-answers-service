@@ -12,3 +12,4 @@ httpRequest.txt
 ec2-qa-postgres.pem
 catborg.pem
 deployment.md
+.*
