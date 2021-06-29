@@ -5,7 +5,6 @@ const PORT = 3001;
 const { Pool } = require('pg');
 const responseTime = require('response-time');
 const { Logger } = require("../logs/logger");
-const bunyan = require('bunyan');
 
 require('dotenv').config({path: '../.env'});
 
