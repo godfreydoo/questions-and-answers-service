@@ -129,7 +129,7 @@ app.post('/questions/:id/answers', async (req, res) => {
     const answerConfig = {
       name: 'post-answer',
       text: 'insert into qa.answers (question_id, body, answerer_name, answerer_email) values ($1, $2, $3, $4) returning id;',
-      values: [req.body.question_id, req.body.body, req.body.answerer_name, req.body.answerer_email],
+      values: [req.params.id, req.body.body, req.body.answerer_name, req.body.answerer_email],
     }
     var response = await pool.query(answerConfig);
     await req.body.photos.forEach(async (value, index) => {
