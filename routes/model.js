@@ -96,13 +96,11 @@ module.exports = {
 
   postAnswer: async function(method, headers, body, query, params) {
     try {
-      console.time('testing testing');
       const answerConfig = {
         text: 'insert into qa.answers (question_id, body, answerer_name, answerer_email) values ($1, $2, $3, $4) returning id;',
         values: [params.id, body.body, body.answerer_name, body.answerer_email],
       }
       const { rows } = await pool.query(answerConfig);
-
       await body.photos.forEach((value) => {
         let photoConfig = {
           text: 'insert into qa.photos (answer_id, url) values ($1, $2);',
@@ -110,7 +108,6 @@ module.exports = {
         }
         pool.query(photoConfig);
       });
-      console.timeEnd('testing testing');
     } catch (err) {
       console.error(err);
     }
