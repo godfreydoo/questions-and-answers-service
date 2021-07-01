@@ -30,7 +30,7 @@ async function execute() {
     // console.log('Transforming time columns...')
     // await Promise.allSettled([updateTimeForQuestions(), updateTimeForAnswers()]);
     console.timeEnd('ETL finished')
-    pool.release();
+    pool.end();
     console.log('Database connection closed...')
   } catch (err) {
     console.error(err);
