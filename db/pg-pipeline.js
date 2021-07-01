@@ -1,26 +1,14 @@
-const { Pool } = require('pg');
+const { pool } = require('./index.js');
 const etl = require('etl');
 const fs = require('fs');
-
-require('dotenv').config();
-
-
-// Database
-const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_DATABASE,
-  password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT,
-})
 
 execute();
 
 async function execute() {
+  var client = await pool.connect();
+  console.log('Client connected');
   try {
-    pool.connect()
     console.time('ETL finished');
-    console.log('Database connected...');
     await Promise.allSettled([uploadPhoto(), uploadAnswers(), uploadQuestions()]);
     console.log('Data loaded...');
     console.log('Data sanitizing...');
@@ -29,11 +17,12 @@ async function execute() {
     console.timeEnd('Sequence values finished');
     // console.log('Transforming time columns...')
     // await Promise.allSettled([updateTimeForQuestions(), updateTimeForAnswers()]);
-    console.timeEnd('ETL finished')
-    pool.end();
-    console.log('Database connection closed...')
+    console.timeEnd('ETL finished');
   } catch (err) {
     console.error(err);
+  } finally {
+    await client.release();
+    console.log('Client released');
   }
 }
 

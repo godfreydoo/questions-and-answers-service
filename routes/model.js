@@ -16,7 +16,6 @@ module.exports = {
     }
 
     const questionConfig = {
-      name: 'get questions',
       text: `SELECT row_to_json(questions) AS questions\
                FROM (SELECT json_agg(results) AS results\
                      FROM (SELECT id AS question_id, body AS question_body, date_written AS question_date, asker_name, helpful AS question_helpfulness, reported, answer.details AS answers\
@@ -42,10 +41,10 @@ module.exports = {
       values: [query.product_id, count, offset],
     }
     try {
-      let questionData = await pool.query(questionConfig);
+      let { rows } = await pool.query(questionConfig);
       let result = {
         product_id: query.product_id,
-        results: questionData.rows[0].questions.results || [],
+        results: rows[0].questions.results || [],
       }
       return result;
     } catch (err) {
@@ -66,7 +65,6 @@ module.exports = {
     }
 
     const answersConfig = {
-      name: 'get answers',
       text: 'SELECT row_to_json(questions) AS questions\
              FROM (SELECT json_agg(results) AS results\
                    FROM (SELECT a.id AS answer_id, a.body, a.date_written AS date, a.answerer_name, a.helpful AS helpfulness, photo.url AS photos\
@@ -83,12 +81,12 @@ module.exports = {
       values: [params.id, count, offset],
     }
     try {
-      let data = await pool.query(answersConfig);
+      let { rows } = await pool.query(answersConfig);
       let result = {
         question: params.id,
         page: page,
         count: count,
-        results: data.rows[0].questions.results || [],
+        results: rows[0].questions.results || [],
       }
       return result;
     } catch (err) {
@@ -98,20 +96,21 @@ module.exports = {
 
   postAnswer: async function(method, headers, body, query, params) {
     try {
+      console.time('testing testing');
       const answerConfig = {
-        name: 'post-answer',
         text: 'insert into qa.answers (question_id, body, answerer_name, answerer_email) values ($1, $2, $3, $4) returning id;',
         values: [params.id, body.body, body.answerer_name, body.answerer_email],
       }
-      var response = await pool.query(answerConfig);
-      await body.photos.forEach(async (value, index) => {
+      const { rows } = await pool.query(answerConfig);
+
+      await body.photos.forEach((value) => {
         let photoConfig = {
-          name: 'post-photo',
           text: 'insert into qa.photos (answer_id, url) values ($1, $2);',
-          values: [response.rows[0].id, value],
+          values: [rows[0].id, value],
         }
-        await pool.query(photoConfig);
-      })
+        pool.query(photoConfig);
+      });
+      console.timeEnd('testing testing');
     } catch (err) {
       console.error(err);
     }
@@ -120,7 +119,6 @@ module.exports = {
   postQuestion: async function(method, headers, body, query, params) {
     try {
       const config = {
-        name: 'post-question',
         text: 'insert into qa.questions (product_id, body, asker_name, asker_email) values ($1, $2, $3, $4);',
         values: [body.product_id, body.body, body.answerer_name, body.answerer_email],
       }
@@ -132,7 +130,6 @@ module.exports = {
 
   putQuestionHelpful: async function(method, headers, body, query, params) {
     const config = {
-      name: 'put-question-helpful',
       text: 'update qa.questions set helpful = helpful + 1 where id = $1;',
       values: [query.id],
     }
@@ -145,7 +142,6 @@ module.exports = {
 
   putAnswerHelpful: async function(method, headers, body, query, params) {
     const config = {
-      name: 'put-answer-helpful',
       text: 'update qa.answers set helpful = helpful + 1 where id = $1;',
       values: [query.id],
     }
@@ -158,7 +154,6 @@ module.exports = {
 
   putQuestionReport: async function(method, headers, body, query, params) {
     const config = {
-      name: 'put-question-report',
       text: 'update qa.questions set reported = true where id = $1;',
       values: [query.id],
     }
@@ -171,7 +166,6 @@ module.exports = {
 
   putQuestionHelpful: async function(method, headers, body, query, params) {
     const config = {
-      name: 'put-answer-report',
       text: 'update qa.answers set reported = true where id = $1;',
       values: [query.id],
     }

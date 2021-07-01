@@ -11,7 +11,7 @@ const pool = new Pool({
   max: 50,
   idleTimeoutMillis: 2000,
   connectionTimeoutMillis: 0,
-})
+}, console.log('Pool filled'));
 
 module.exports = {
   pool
