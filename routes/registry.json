@@ -1,0 +1,8 @@
+{
+  "services": {
+    "qa": {
+      "apiName": "qa",
+      "url": "http://localhost:3001/"
+    }
+  }
+}

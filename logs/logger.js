@@ -1,9 +1,15 @@
 const fs = require("fs");
 const path = require('path');
 const Logger = (exports.Logger = {});
-const requestStream = fs.createWriteStream(path.join(__dirname, 'request.log'));
+const totalRequestStream = fs.createWriteStream(path.join(__dirname, 'httpRequest.txt'));
+const dbQueryStream = fs.createWriteStream(path.join(__dirname, 'dbQuery.txt'));
 
 Logger.request = function(stat, time) {
   var message = `${stat} ${time} \n`;
-  requestStream.write(message);
+  totalRequestStream.write(message);
+};
+
+Logger.dbQuery = function(stat, time) {
+  var message = `${stat}-${time} \n`;
+  dbQueryStream.write(message);
 };
