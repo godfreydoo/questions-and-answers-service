@@ -1,8 +1,8 @@
 CREATE SCHEMA IF NOT EXISTS qa;
 
-DROP TABLE IF EXISTS qa.questions;
-DROP TABLE IF EXISTS qa.photos;
-DROP TABLE IF EXISTS qa.answers;
+DROP TABLE IF EXISTS qa.questions CASCADE;
+DROP TABLE IF EXISTS qa.photos CASCADE;
+DROP TABLE IF EXISTS qa.answers CASCADE;
 
 
 CREATE TABLE IF NOT EXISTS qa.questions (
@@ -17,6 +17,13 @@ CREATE TABLE IF NOT EXISTS qa.questions (
   unique(id)
 );
 
+-- \copy qa.questions(id, product_id, body, date_written, asker_name, asker_email, reported, helpful) FROM '~/questions.csv' WITH (FORMAT CSV, HEADER)
+
+-- COPY questions(id, product_id, body, date_written, asker_name, asker_email, reported, helpful)
+-- FROM '/questions.csv'
+-- DELIMITER ','
+-- CSV HEADER;
+
 CREATE TABLE IF NOT EXISTS qa.answers (
   id serial primary key,
   question_id int,
@@ -26,14 +33,31 @@ CREATE TABLE IF NOT EXISTS qa.answers (
   answerer_email varchar(60),
   reported boolean default false,
   helpful int default 0,
-  unique(id)
+  unique(id),
+  foreign key (question_id) references qa.questions(id)
 );
+
+-- \copy qa.answers(id, question_id, body, date_written, answerer_name, answerer_email, reported, helpful) FROM '~/answers.csv' WITH (FORMAT CSV, HEADER)
+
+-- COPY answers(id, question_id, body, date_written, answerer_name, answerer_email, reported, helpful)
+-- FROM '/answers.csv'
+-- DELIMITER ','
+-- CSV HEADER;
+
 
 CREATE TABLE IF NOT EXISTS qa.photos (
   id serial primary key,
   answer_id int,
-  url varchar(256)
+  url varchar(256),
+  foreign key (answer_id) references qa.answers(id)
 );
+
+-- \copy qa.photos(id, answer_id, url) FROM '~/answers_photos.csv' WITH (FORMAT CSV, HEADER)
+
+-- COPY photos(id, answer_id, url)
+-- FROM '/answers_photos.csv'
+-- DELIMITER ','
+-- CSV HEADER;
 
 -- ALTER TABLE qa.questions ADD COLUMN time_holder TEXT;
 -- ALTER TABLE qa.answers ADD COLUMN time_holder TEXT;

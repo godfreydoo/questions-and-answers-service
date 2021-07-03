@@ -59,7 +59,7 @@ async function updateTimeForAnswers () {
 }
 
 function updateQuestionsSeqValues () {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     pool
       .query("SELECT setval('qa.questions_id_seq', max(id)) FROM qa.questions;")
       .then(res => {
@@ -73,7 +73,7 @@ function updateQuestionsSeqValues () {
 }
 
 function updateAnswersSeqValues () {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     pool
       .query("SELECT setval('qa.answers_id_seq', max(id)) FROM qa.answers;")
       .then(res => {
@@ -87,7 +87,7 @@ function updateAnswersSeqValues () {
 }
 
 function updatePhotosSeqValues () {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     pool
       .query("SELECT setval('qa.photos_id_seq', max(id)) FROM qa.photos;")
       .then(res => {
