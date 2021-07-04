@@ -6,8 +6,8 @@ Web API server to support the demands of production traffic for a 'Questions and
 * ETL process to import and manage 12 million records of data
 * Optimized database queries and tuning of Postgres database for fast response times
 * Deployed across multiple AWS EC2 t2.micro instances to support horizontal scaling
-* Added Nginx load balancer and reverse proxy with optimized configurations for maximum throughput and latency
-* Configured Nginx caching to increase data retreival performance for heavy read requests
+* Added NGINX load balancer and reverse proxy with optimized configurations for maximum throughput and latency
+* Configured NGINX caching to increase data retreival performance for heavy read requests
 * Load testing done on [Loader](https://loader.io/) and with [k6](https://k6.io/)
 * Created my own [tool](https://github.com/godfreydoo/retrieve-loaderio-test-data) to programatically run load tests and capture results for accurate measurements 
 
